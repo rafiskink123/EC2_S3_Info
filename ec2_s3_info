@@ -1,0 +1,80 @@
+from collections import defaultdict
+from botocore.exceptions import ClientError
+
+import boto3
+import logging
+
+"""
+A tool for retrieving basic information from the running EC2 instances.
+"""
+
+# Connect to EC2
+ec2 = boto3.resource('ec2')
+
+# Get information for all running instances
+running_instances = ec2.instances.filter(Filters=[{
+    'Name': 'instance-state-name',
+    'Values': ['running']}])
+
+ec2info = defaultdict()
+for instance in running_instances:
+    for tag in instance.tags:
+        if 'Name'in tag['Key']:
+            name = tag['Value']
+    # Add instance info to a dictionary         
+    ec2info[instance.id] = {
+        'Name': name,
+        'Instance_ID': instance.id,
+        'Instance_State': instance.state['Name'],
+        'Launch_Date': instance.launch_time
+        }
+
+attributes = ['Name', 'Instance_ID', 'Instance_State', 'Launch_Date']
+for instance_id, instance in ec2info.items():
+    for key in attributes:
+        print("{0}: {1}".format(key, instance[key]))
+    print("------")
+
+# Get information for all stopped instances
+stopped_instances = ec2.instances.filter(Filters=[{
+    'Name': 'instance-state-name',
+    'Values': ['stopped']}])
+
+ec2info = defaultdict()
+for instance in stopped_instances:
+    for tag in instance.tags:
+        if 'Name'in tag['Key']:
+            name = tag['Value'] 
+# Add instance info to a dictionary         
+    ec2info[instance.id] = {
+        'Name': name,
+        'Instance_ID': instance.id,
+        'Instance_State': instance.state['Name'],
+        'Launch_Date': instance.launch_time
+        }
+
+attributes = ['Name', 'Instance_ID', 'Instance_State', 'Launch_Date']
+for instance_id, instance in ec2info.items():
+    for key in attributes:
+        print("{0}: {1}".format(key, instance[key]))
+    print("------")
+
+# Connect to S3
+s3 = boto3.resource('s3')
+    
+# Retrieve the list of existing buckets
+s3 = boto3.client('s3')
+response = s3.list_buckets()
+
+# Output the bucket names
+print('Existing buckets:')
+for bucket in response['Buckets']:
+    print(f'  {bucket["Name"]}')   
+
+# Retrieving the region of existing buckets
+s3_client = boto3.client('s3', region_name=region)
+location = {'LocationConstraint': region}
+          
+# Output the region names
+print('Existing Region:')          
+     print(f'   {bucket["region"]}')          
